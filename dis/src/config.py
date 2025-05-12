@@ -19,14 +19,9 @@ class ClickHouseConfig(BaseModel):
     password: str = os.getenv("CLICKHOUSE_PASSWORD", "")
     database: str = os.getenv("CLICKHOUSE_DATABASE", "iot_monitoring")
 
-class KafkaConfig(BaseModel):
-    bootstrap_servers: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-    topic: str = os.getenv("KAFKA_TOPIC", "sensor_data")
-
 class Config(BaseModel):
     mqtt: MQTTConfig = MQTTConfig()
     clickhouse: ClickHouseConfig = ClickHouseConfig()
-    kafka: KafkaConfig = KafkaConfig()
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
 config = Config() 

@@ -5,7 +5,6 @@ from loguru import logger
 
 from config import config
 from database import ClickHouseClient
-from kafka_producer import SensorDataProducer
 from mqtt_client import MQTTClient
 from models import SensorData
 
@@ -23,7 +22,6 @@ class DataIngestionService:
         logger.info("Initializing Data Ingestion Service")
         
         self.clickhouse_client = ClickHouseClient()
-        self.kafka_producer = SensorDataProducer()
         self.mqtt_client = MQTTClient(on_message_callback=self.process_sensor_data)
         
         signal.signal(signal.SIGINT, self.signal_handler)
@@ -43,8 +41,6 @@ class DataIngestionService:
     def process_sensor_data(self, sensor_data: SensorData):
         try:
             self.clickhouse_client.insert_sensor_data(sensor_data)
-            
-            self.kafka_producer.send_sensor_data(sensor_data)
             
             logger.info(
                 f"Processed data from device {sensor_data.device_id}, "

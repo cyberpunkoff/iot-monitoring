@@ -22,6 +22,3 @@ class SensorData(BaseModel):
             "location": self.location or "",
             "metadata": str(self.metadata),
         }
-
-    def to_kafka_dict(self) -> Dict[str, Any]:
-        return self.model_dump()
