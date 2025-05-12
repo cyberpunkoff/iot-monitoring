@@ -1,5 +1,3 @@
-"""Entry point for running the API service."""
-
 import uvicorn
 from loguru import logger
 
@@ -13,4 +11,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=config.debug
-    ) 
+    )

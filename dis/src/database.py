@@ -1,5 +1,3 @@
-"""Module for ClickHouse database operations."""
-
 from clickhouse_driver import Client
 from loguru import logger
 
@@ -8,10 +6,8 @@ from models import SensorData
 
 
 class ClickHouseClient:
-    """Client for interacting with ClickHouse database."""
 
     def __init__(self):
-        """Initialize the ClickHouse client."""
         self.client = Client(
             host=config.clickhouse.host,
             port=config.clickhouse.port,
@@ -22,14 +18,11 @@ class ClickHouseClient:
         self._ensure_table_exists()
 
     def _ensure_table_exists(self):
-        """Ensure that the sensor_data table exists."""
         try:
-            # Create database if not exists
             self.client.execute(
                 f"CREATE DATABASE IF NOT EXISTS {config.clickhouse.database}"
             )
             
-            # Create table if not exists
             self.client.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {config.clickhouse.database}.sensor_data (
@@ -52,11 +45,6 @@ class ClickHouseClient:
             raise
 
     def insert_sensor_data(self, sensor_data: SensorData):
-        """Insert sensor data into ClickHouse.
-        
-        Args:
-            sensor_data: The sensor data to insert
-        """
         try:
             data_dict = sensor_data.to_clickhouse_dict()
             self.client.execute(
@@ -80,4 +68,4 @@ class ClickHouseClient:
             logger.debug(f"Inserted data for device {data_dict['device_id']}")
         except Exception as e:
             logger.error(f"Error inserting data into ClickHouse: {e}")
-            raise 
+            raise

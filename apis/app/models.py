@@ -1,5 +1,3 @@
-"""Data models for the API service."""
-
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, Any, List
@@ -8,7 +6,6 @@ from pydantic import BaseModel, Field, EmailStr, SecretStr
 
 
 class SensorData(BaseModel):
-    """Model representing sensor data."""
     device_id: str
     sensor_type: str
     value: float
@@ -32,13 +29,11 @@ class SensorData(BaseModel):
 
 
 class SensorDataResponse(BaseModel):
-    """Model for returning sensor data in API responses."""
     data: List[SensorData]
     total_count: int
 
 
 class SensorStats(BaseModel):
-    """Model for aggregated sensor statistics."""
     device_id: str
     sensor_type: str
     min_value: float
@@ -64,25 +59,21 @@ class SensorStats(BaseModel):
 
 
 class SensorStatsResponse(BaseModel):
-    """Model for returning sensor statistics in API responses."""
     data: List[SensorStats]
 
 
 class UserRole(str, Enum):
-    """User role enumeration."""
     USER = "user"
     ADMIN = "admin"
 
 
 class UserBase(BaseModel):
-    """Base model for user data."""
     username: str
     email: EmailStr
     full_name: Optional[str] = None
 
 
 class UserCreate(UserBase):
-    """Model for user creation with password."""
     password: SecretStr
     
     class Config:
@@ -97,7 +88,6 @@ class UserCreate(UserBase):
 
 
 class UserInDB(UserBase):
-    """Model for user data stored in database."""
     hashed_password: str
     role: UserRole = UserRole.USER
     created_at: datetime
@@ -106,7 +96,6 @@ class UserInDB(UserBase):
 
 
 class User(UserBase):
-    """Model for user data returned in API responses."""
     role: UserRole
     created_at: datetime
     is_active: bool
@@ -125,7 +114,6 @@ class User(UserBase):
 
 
 class Token(BaseModel):
-    """Model for token response."""
     access_token: str
     token_type: str
     
@@ -139,13 +127,11 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    """Model for token payload data."""
     username: str
     role: UserRole
 
 
 class DeviceBase(BaseModel):
-    """Base model for device data."""
     device_id: str
     name: str
     location: Optional[str] = None
@@ -153,7 +139,6 @@ class DeviceBase(BaseModel):
 
 
 class DeviceCreate(DeviceBase):
-    """Model for device creation."""
     class Config:
         json_schema_extra = {
             "example": {
@@ -166,7 +151,6 @@ class DeviceCreate(DeviceBase):
 
 
 class Device(DeviceBase):
-    """Model for device data returned in API responses."""
     created_at: datetime
     is_active: bool = True
     
@@ -184,6 +168,5 @@ class Device(DeviceBase):
 
 
 class DeviceResponse(BaseModel):
-    """Model for returning devices in API responses."""
     data: List[Device]
     total_count: int

@@ -1,5 +1,3 @@
-"""Main FastAPI application module."""
-
 from datetime import datetime
 from typing import List, Optional
 
@@ -18,41 +16,26 @@ from app.models import (
 )
 
 
-# Create FastAPI app
 app = FastAPI(
     title=config.app_name,
     description="API service for retrieving IoT sensor data from ClickHouse",
     version="1.0.0",
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Auth endpoints
 @app.post("/auth/register", response_model=User, status_code=status.HTTP_201_CREATED, tags=["auth"])
 async def register_user(
     user_data: UserCreate,
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Register a new user.
-    
-    Args:
-        user_data: User creation data including username, email, and password
-        db: ClickHouse database client
-        
-    Returns:
-        Created user data
-        
-    Raises:
-        HTTPException: If username already exists
-    """
     try:
         user = await db.create_user(user_data.model_dump())
         return User(
@@ -81,18 +64,6 @@ async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """OAuth2 compatible token login, get an access token for future requests.
-    
-    Args:
-        form_data: OAuth2 password request form
-        db: ClickHouse database client
-        
-    Returns:
-        JWT access token
-        
-    Raises:
-        HTTPException: If authentication fails
-    """
     user = await authenticate_user(
         db, form_data.username, form_data.password
     )
@@ -117,37 +88,15 @@ async def login_for_access_token(
 
 @app.get("/auth/me", response_model=User, tags=["auth"])
 async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
-    """Get current user information.
-    
-    Args:
-        current_user: Current authenticated user
-        
-    Returns:
-        Current user data
-    """
     return current_user
 
 
-# Device management endpoints
 @app.post("/devices", response_model=Device, status_code=status.HTTP_201_CREATED, tags=["devices"])
 async def create_device(
     device_data: DeviceCreate,
     current_user: User = Depends(require_admin),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Create a new device (admin only).
-    
-    Args:
-        device_data: Device creation data
-        current_user: Current authenticated admin user
-        db: ClickHouse database client
-        
-    Returns:
-        Created device data
-        
-    Raises:
-        HTTPException: If device already exists or creation fails
-    """
     try:
         device = await db.create_device(device_data.model_dump())
         return device
@@ -170,16 +119,6 @@ async def get_devices(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get all devices.
-    
-    Args:
-        limit: Maximum number of devices to return
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        List of devices
-    """
     try:
         devices = await db.get_all_devices(limit=limit)
         return DeviceResponse(data=devices, total_count=len(devices))
@@ -197,19 +136,6 @@ async def get_device(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get a device by ID.
-    
-    Args:
-        device_id: Device ID to retrieve
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        Device data
-        
-    Raises:
-        HTTPException: If device not found
-    """
     try:
         device = await db.get_device(device_id)
         if not device:
@@ -235,20 +161,6 @@ async def update_device(
     current_user: User = Depends(require_admin),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Update a device (admin only).
-    
-    Args:
-        device_id: Device ID to update
-        device_data: Device data to update
-        current_user: Current authenticated admin user
-        db: ClickHouse database client
-        
-    Returns:
-        Updated device data
-        
-    Raises:
-        HTTPException: If device not found or update fails
-    """
     try:
         device = await db.update_device(device_id, device_data)
         if not device:
@@ -273,16 +185,6 @@ async def delete_device(
     current_user: User = Depends(require_admin),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Delete a device (admin only).
-    
-    Args:
-        device_id: Device ID to delete
-        current_user: Current authenticated admin user
-        db: ClickHouse database client
-        
-    Raises:
-        HTTPException: If device not found or deletion fails
-    """
     try:
         success = await db.delete_device(device_id)
         if not success:
@@ -300,7 +202,6 @@ async def delete_device(
         )
 
 
-# Protected sensor data endpoints
 @app.get("/sensor-data/latest", response_model=SensorDataResponse, tags=["sensor-data"])
 async def get_latest_sensor_data(
     device_id: Optional[str] = None,
@@ -310,19 +211,6 @@ async def get_latest_sensor_data(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get the latest sensor readings.
-    
-    Args:
-        device_id: Optional filter by device ID
-        sensor_type: Optional filter by sensor type
-        location: Optional filter by location
-        limit: Maximum number of records to return (1-1000)
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        Sensor data response with latest readings
-    """
     try:
         data = await db.get_latest_sensor_data(
             device_id=device_id,
@@ -347,21 +235,6 @@ async def get_historical_sensor_data(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get historical sensor data within a time range.
-    
-    Args:
-        from_timestamp: Start timestamp (ISO format)
-        to_timestamp: End timestamp (ISO format)
-        device_id: Optional filter by device ID
-        sensor_type: Optional filter by sensor type
-        location: Optional filter by location
-        limit: Maximum number of records to return (1-10000)
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        Sensor data response with historical readings
-    """
     if from_timestamp >= to_timestamp:
         raise HTTPException(
             status_code=400, 
@@ -393,20 +266,6 @@ async def get_sensor_stats(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get aggregated statistics for sensor data.
-    
-    Args:
-        from_timestamp: Start timestamp (ISO format)
-        to_timestamp: End timestamp (ISO format)
-        device_id: Optional filter by device ID
-        sensor_type: Optional filter by sensor type
-        location: Optional filter by location
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        Sensor statistics response with min, max, and avg values
-    """
     if from_timestamp >= to_timestamp:
         raise HTTPException(
             status_code=400, 
@@ -427,21 +286,11 @@ async def get_sensor_stats(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Metadata endpoints
 @app.get("/metadata/devices", response_model=List[str], tags=["metadata"])
 async def get_device_ids(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get a list of all unique device IDs in the database.
-    
-    Args:
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        List of unique device IDs
-    """
     try:
         return await db.get_unique_devices()
     except Exception as e:
@@ -454,15 +303,6 @@ async def get_sensor_types(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get a list of all unique sensor types in the database.
-    
-    Args:
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        List of unique sensor types
-    """
     try:
         return await db.get_unique_sensor_types()
     except Exception as e:
@@ -475,15 +315,6 @@ async def get_locations(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get a list of all unique locations in the database.
-    
-    Args:
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        List of unique locations
-    """
     try:
         return await db.get_unique_locations()
     except Exception as e:
@@ -496,15 +327,6 @@ async def get_sensor_ids(
     current_user: User = Depends(get_current_active_user),
     db: ClickHouseClient = Depends(get_db_client)
 ):
-    """Get a list of all unique sensor IDs in the database.
-    
-    Args:
-        current_user: Current authenticated user
-        db: ClickHouse database client
-        
-    Returns:
-        List of unique sensor IDs
-    """
     try:
         return await db.get_unique_sensor_ids()
     except Exception as e:

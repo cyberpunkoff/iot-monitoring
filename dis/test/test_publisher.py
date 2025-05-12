@@ -1,10 +1,3 @@
-"""
-Test script to publish sample sensor data to MQTT.
-
-This can be used to test the Data Ingestion Service by simulating IoT devices
-sending data to the MQTT broker.
-"""
-
 import json
 import random
 import time
@@ -13,13 +6,11 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 
 
-# MQTT Configuration
 MQTT_BROKER_HOST = "localhost"
 MQTT_BROKER_PORT = 1883
 MQTT_CLIENT_ID = "test_publisher"
 MQTT_TOPIC_TEMPLATE = "sensors/{device_id}/data"
 
-# Sample device configurations
 DEVICES = [
     {"id": "device001", "type": "temperature", "unit": "°C", "location": "room1"},
     {"id": "device002", "type": "humidity", "unit": "%", "location": "room1"},
@@ -29,7 +20,6 @@ DEVICES = [
 
 
 def generate_random_value(device_type):
-    """Generate a random sensor value based on the device type."""
     ranges = {
         "temperature": (15.0, 35.0),
         "humidity": (30.0, 90.0),
@@ -41,7 +31,6 @@ def generate_random_value(device_type):
 
 
 def create_message(device):
-    """Create a sample message for a device."""
     return {
         "device_id": device["id"],
         "sensor_type": device["type"],
@@ -57,7 +46,6 @@ def create_message(device):
 
 
 def on_connect(client, userdata, flags, rc):
-    """Handle connection to MQTT broker."""
     if rc == 0:
         print("Connected to MQTT broker")
     else:
@@ -65,7 +53,6 @@ def on_connect(client, userdata, flags, rc):
 
 
 def publish_data(client):
-    """Publish sample data for all devices."""
     for device in DEVICES:
         message = create_message(device)
         topic = MQTT_TOPIC_TEMPLATE.format(device_id=device["id"])
@@ -79,8 +66,6 @@ def publish_data(client):
 
 
 def main():
-    """Run the test publisher."""
-    # Connect to MQTT broker
     client = mqtt.Client(client_id=MQTT_CLIENT_ID)
     client.on_connect = on_connect
     
@@ -88,7 +73,6 @@ def main():
         client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
         client.loop_start()
         
-        # Publish data every 5 seconds
         try:
             while True:
                 publish_data(client)
@@ -105,4 +89,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

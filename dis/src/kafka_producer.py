@@ -1,5 +1,3 @@
-"""Module for Kafka producer operations."""
-
 import json
 from kafka import KafkaProducer
 from loguru import logger
@@ -9,10 +7,8 @@ from models import SensorData
 
 
 class SensorDataProducer:
-    """Producer for sending sensor data to Kafka."""
 
     def __init__(self):
-        """Initialize the Kafka producer."""
         try:
             self.producer = KafkaProducer(
                 bootstrap_servers=config.kafka.bootstrap_servers,
@@ -27,17 +23,11 @@ class SensorDataProducer:
             raise
 
     def send_sensor_data(self, sensor_data: SensorData):
-        """Send sensor data to Kafka topic.
-        
-        Args:
-            sensor_data: The sensor data to send
-        """
         try:
             future = self.producer.send(
                 config.kafka.topic, 
                 sensor_data.to_kafka_dict()
             )
-            # Wait for message to be sent
             future.get(timeout=10)
             logger.debug(
                 f"Sent data to Kafka topic {config.kafka.topic} "
@@ -48,8 +38,7 @@ class SensorDataProducer:
             raise
 
     def close(self):
-        """Close the Kafka producer."""
         if hasattr(self, "producer"):
             self.producer.flush()
             self.producer.close()
-            logger.info("Kafka producer closed") 
+            logger.info("Kafka producer closed")

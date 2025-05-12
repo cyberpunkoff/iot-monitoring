@@ -29,5 +29,4 @@ class Config(BaseModel):
     kafka: KafkaConfig = KafkaConfig()
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
-# Create global config instance
 config = Config() 

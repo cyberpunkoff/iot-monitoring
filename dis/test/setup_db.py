@@ -1,9 +1,3 @@
-"""
-ClickHouse database setup script.
-
-This script creates the necessary database and tables for the Data Ingestion Service.
-"""
-
 from clickhouse_driver import Client
 from loguru import logger
 import sys
@@ -12,15 +6,12 @@ from config import config
 
 
 def setup_database():
-    """Set up the ClickHouse database and tables."""
     logger.info(f"Setting up ClickHouse database: {config.clickhouse.database}")
     
-    # Configure logger
     logger.remove()
     logger.add(sys.stderr, level=config.log_level)
     
     try:
-        # Connect to ClickHouse
         client = Client(
             host=config.clickhouse.host,
             port=config.clickhouse.port,
@@ -28,13 +19,11 @@ def setup_database():
             password=config.clickhouse.password,
         )
         
-        # Create database if not exists
         client.execute(
             f"CREATE DATABASE IF NOT EXISTS {config.clickhouse.database}"
         )
         logger.info(f"Database '{config.clickhouse.database}' created or already exists")
         
-        # Create sensor_data table
         client.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {config.clickhouse.database}.sensor_data (
@@ -53,7 +42,6 @@ def setup_database():
         )
         logger.info("Table 'sensor_data' created or already exists")
         
-        # Create a summary table with materialized view
         client.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {config.clickhouse.database}.sensor_data_summary (
@@ -70,7 +58,6 @@ def setup_database():
         )
         logger.info("Table 'sensor_data_summary' created or already exists")
         
-        # Create materialized view if not exists
         client.execute(
             f"""
             CREATE MATERIALIZED VIEW IF NOT EXISTS {config.clickhouse.database}.sensor_data_summary_mv
@@ -106,7 +93,6 @@ def setup_database():
                 PRIMARY KEY (username)
             """)
             
-        # Create devices table if it doesn't exist
         client.execute("""
             CREATE TABLE IF NOT EXISTS devices (
                 device_id String,
@@ -129,4 +115,4 @@ def setup_database():
 
 
 if __name__ == "__main__":
-    setup_database() 
+    setup_database()
