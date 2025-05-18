@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any, Union
 
-from clickhouse_driver import Client
+from clickhouse_driver import Client, defines
 from loguru import logger
 from passlib.context import CryptContext
 
@@ -21,6 +21,7 @@ class ClickHouseClient:
             user=config.clickhouse.user,
             password=config.clickhouse.password,
             database=config.clickhouse.database,
+            client_revision=defines.DBMS_MIN_PROTOCOL_VERSION_WITH_QUOTA_KEY
         )
         logger.info(f"Connected to ClickHouse at {config.clickhouse.host}:{config.clickhouse.port}")
 
@@ -247,7 +248,6 @@ class ClickHouseClient:
             logger.error(f"Error getting unique sensor IDs: {e}")
             raise
 
-    # User-related methods
     async def create_user(self, user_data: dict) -> UserInDB:
         username = user_data["username"]
         

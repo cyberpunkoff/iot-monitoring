@@ -19,14 +19,12 @@ function AdminPage() {
     description: ''
   });
 
-  // Redirect non-admin users
   useEffect(() => {
     if (!isLoading && (!isLoggedIn || !isAdmin)) {
       navigate('/');
     }
   }, [isAdmin, isLoggedIn, navigate, isLoading]);
 
-  // Load devices
   useEffect(() => {
     const loadDevices = async () => {
       try {
@@ -250,4 +248,4 @@ export default function ProtectedAdminPage() {
       <AdminPage />
     </ProtectedRoute>
   );
-} 
+}

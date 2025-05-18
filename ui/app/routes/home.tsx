@@ -18,14 +18,12 @@ function Home() {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState<number>(0);
   
-  // Current filters
   const [filters, setFilters] = useState<{
     deviceId?: string;
     sensorType?: string;
     location?: string;
   }>({});
   
-  // Load data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -51,13 +49,11 @@ function Home() {
     
     fetchData();
     
-    // Set up auto-refresh every 30 seconds
     const refreshInterval = setInterval(fetchData, 30000);
     
     return () => clearInterval(refreshInterval);
   }, [filters]);
   
-  // Handle filter changes
   const handleFilterChange = (newFilters: {
     deviceId?: string;
     sensorType?: string;

@@ -8,7 +8,7 @@ class SensorData(BaseModel):
     sensor_type: str
     value: float
     unit: str
-    # timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
     location: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
@@ -18,7 +18,7 @@ class SensorData(BaseModel):
             "sensor_type": self.sensor_type,
             "value": self.value,
             "unit": self.unit,
-            #"timestamp": self.timestamp,
+            "timestamp": self.timestamp,
             "location": self.location or "",
             "metadata": str(self.metadata),
         }

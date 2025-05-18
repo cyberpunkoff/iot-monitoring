@@ -5,7 +5,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 export function meta() {
   return [
     { title: "Метаданные - Панель IoT датчиков" },
-    { name: "description", content: "Просмотр метаданных для ваших IoT датчиков" },
+    { name: "description", content: "Просмотр метаданных IoT-датчиков" },
   ];
 }
 
@@ -17,7 +17,6 @@ function Metadata() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Load metadata
   useEffect(() => {
     const fetchMetadata = async () => {
       setLoading(true);
@@ -46,7 +45,6 @@ function Metadata() {
     fetchMetadata();
   }, []);
   
-  // Render loading state
   if (loading) {
     return (
       <div>
@@ -73,7 +71,6 @@ function Metadata() {
     );
   }
   
-  // Show error if needed
   if (error) {
     return (
       <div>
@@ -91,7 +88,6 @@ function Metadata() {
     );
   }
   
-  // Render metadata
   return (
     <div>
       <div className="mb-6">
@@ -176,4 +172,4 @@ export default function ProtectedMetadata() {
       <Metadata />
     </ProtectedRoute>
   );
-} 
+}

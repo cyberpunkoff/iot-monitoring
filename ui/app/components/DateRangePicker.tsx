@@ -6,19 +6,16 @@ interface DateRangePickerProps {
 
 export default function DateRangePicker({ onDateRangeChange }: DateRangePickerProps) {
   const [fromDate, setFromDate] = useState<string>(() => {
-    // Default: 7 days ago
     const date = new Date();
     date.setDate(date.getDate() - 7);
     return date.toISOString().split('T')[0];
   });
   
   const [toDate, setToDate] = useState<string>(() => {
-    // Default: today
     const date = new Date();
     return date.toISOString().split('T')[0];
   });
   
-  // Convert local date to ISO format with time
   const toISODateTime = (dateString: string, isEnd = false) => {
     const date = new Date(dateString);
     if (isEnd) {
@@ -82,4 +79,4 @@ export default function DateRangePicker({ onDateRangeChange }: DateRangePickerPr
       </div>
     </div>
   );
-} 
+}

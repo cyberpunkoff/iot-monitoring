@@ -35,18 +35,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if token is expired
   const isTokenExpired = (token: string): boolean => {
     try {
       const decoded = jwtDecode<DecodedToken>(token);
-      // Check if expiration timestamp is before current time
       return decoded.exp * 1000 < Date.now();
     } catch (err) {
       return true;
     }
   };
 
-  // Check for existing token and load user data on mount
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
@@ -56,14 +53,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const token = localStorage.getItem('token');
         
         if (!token || isTokenExpired(token)) {
-          // Token is missing or expired, clear storage
           localStorage.removeItem('token');
           setUser(null);
           setIsLoading(false);
           return;
         }
         
-        // Token exists and is valid, load user data
         const userData = await authApi.getCurrentUser();
         setUser(userData);
       } catch (err) {
@@ -78,16 +73,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initAuth();
   }, []);
 
-  // Login handler
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // First, get token by logging in
       await authApi.login(credentials);
       
-      // Then get current user data
       const userData = await authApi.getCurrentUser();
       setUser(userData);
     } catch (err: any) {
@@ -99,16 +91,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Register handler
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Register the user
       await authApi.register(userData);
       
-      // After successful registration, log in with new credentials
       await login({
         username: userData.username,
         password: userData.password
@@ -122,7 +111,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Logout handler
   const logout = () => {
     authApi.logout();
     setUser(null);

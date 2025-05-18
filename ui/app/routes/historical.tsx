@@ -19,14 +19,12 @@ function Historical() {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState<number>(0);
   
-  // Current filters
   const [filters, setFilters] = useState<{
     deviceId?: string;
     sensorType?: string;
     location?: string;
   }>({});
   
-  // Date range
   const [dateRange, setDateRange] = useState<{
     fromDate: string;
     toDate: string;
@@ -44,9 +42,7 @@ function Historical() {
     })(),
   });
   
-  // Load data when filters or date range changes
   useEffect(() => {
-    // Only fetch if we have a date range
     if (!dateRange.fromDate || !dateRange.toDate) return;
     
     const fetchData = async () => {
@@ -76,7 +72,6 @@ function Historical() {
     fetchData();
   }, [filters, dateRange]);
   
-  // Handle filter changes
   const handleFilterChange = (newFilters: {
     deviceId?: string;
     sensorType?: string;
@@ -85,7 +80,6 @@ function Historical() {
     setFilters(newFilters);
   };
   
-  // Handle date range changes
   const handleDateRangeChange = (fromDate: string, toDate: string) => {
     setDateRange({ fromDate, toDate });
   };
@@ -124,4 +118,4 @@ export default function ProtectedHistorical() {
       <Historical />
     </ProtectedRoute>
   );
-} 
+}

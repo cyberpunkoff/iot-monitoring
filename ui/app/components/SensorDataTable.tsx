@@ -6,13 +6,11 @@ interface SensorDataTableProps {
 }
 
 export default function SensorDataTable({ data, loading }: SensorDataTableProps) {
-  // Format timestamp for display
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
   
-  // If loading, show loading state
   if (loading) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
@@ -27,7 +25,6 @@ export default function SensorDataTable({ data, loading }: SensorDataTableProps)
     );
   }
   
-  // If no data, show empty state
   if (data.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
@@ -38,7 +35,6 @@ export default function SensorDataTable({ data, loading }: SensorDataTableProps)
     );
   }
   
-  // Render data table
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -93,4 +89,4 @@ export default function SensorDataTable({ data, loading }: SensorDataTableProps)
       </div>
     </div>
   );
-} 
+}

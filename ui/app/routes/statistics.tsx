@@ -8,7 +8,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 export function meta() {
   return [
     { title: "Статистика - Панель IoT датчиков" },
-    { name: "description", content: "Просмотр статистики для данных IoT датчиков" },
+    { name: "description", content: "Просмотр статистики IoT-датчиков" },
   ];
 }
 
@@ -17,14 +17,12 @@ function Statistics() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Current filters
   const [filters, setFilters] = useState<{
     deviceId?: string;
     sensorType?: string;
     location?: string;
   }>({});
   
-  // Date range
   const [dateRange, setDateRange] = useState<{
     fromDate: string;
     toDate: string;
@@ -42,9 +40,7 @@ function Statistics() {
     })(),
   });
   
-  // Load data when filters or date range changes
   useEffect(() => {
-    // Only fetch if we have a date range
     if (!dateRange.fromDate || !dateRange.toDate) return;
     
     const fetchData = async () => {
@@ -72,7 +68,6 @@ function Statistics() {
     fetchData();
   }, [filters, dateRange]);
   
-  // Handle filter changes
   const handleFilterChange = (newFilters: {
     deviceId?: string;
     sensorType?: string;
@@ -81,7 +76,6 @@ function Statistics() {
     setFilters(newFilters);
   };
   
-  // Handle date range changes
   const handleDateRangeChange = (fromDate: string, toDate: string) => {
     setDateRange({ fromDate, toDate });
   };
@@ -116,4 +110,4 @@ export default function ProtectedStatistics() {
       <Statistics />
     </ProtectedRoute>
   );
-} 
+}

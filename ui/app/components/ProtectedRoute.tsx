@@ -22,16 +22,13 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     );
   }
 
-  // If not logged in, redirect to login page
   if (!isLoggedIn) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If admin route but user is not admin, redirect to home
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
-  // Otherwise, render the children
   return <>{children}</>;
 } 

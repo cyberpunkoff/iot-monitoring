@@ -19,7 +19,6 @@ export default function FilterControls({ onFilterChange, showReset = true }: Fil
   const [selectedSensorType, setSelectedSensorType] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   
-  // Load filter options
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
@@ -40,7 +39,6 @@ export default function FilterControls({ onFilterChange, showReset = true }: Fil
     loadFilterOptions();
   }, []);
   
-  // Apply filters
   const applyFilters = () => {
     onFilterChange({
       deviceId: selectedDevice || undefined,
@@ -49,7 +47,6 @@ export default function FilterControls({ onFilterChange, showReset = true }: Fil
     });
   };
   
-  // Reset filters
   const resetFilters = () => {
     setSelectedDevice("");
     setSelectedSensorType("");
@@ -140,4 +137,4 @@ export default function FilterControls({ onFilterChange, showReset = true }: Fil
       </div>
     </div>
   );
-} 
+}
