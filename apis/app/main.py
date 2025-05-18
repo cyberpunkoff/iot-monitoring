@@ -8,8 +8,8 @@ from loguru import logger
 
 from app.auth import authenticate_user, create_access_token, get_current_active_user, require_admin
 from app.config import config
-from app.database import ClickHouseClient
-from app.dependencies import get_db_client
+from app.database import ClickHouseClient, PostgresClient
+from app.dependencies import get_db_client, get_postgres_client
 from app.models import (
     SensorData, SensorDataResponse, SensorStats, SensorStatsResponse,
     UserCreate, User, Token, DeviceCreate, Device, DeviceResponse
@@ -34,7 +34,7 @@ app.add_middleware(
 @app.post("/auth/register", response_model=User, status_code=status.HTTP_201_CREATED, tags=["auth"])
 async def register_user(
     user_data: UserCreate,
-    db: ClickHouseClient = Depends(get_db_client)
+    db: PostgresClient = Depends(get_postgres_client)
 ):
     try:
         user = await db.create_user(user_data.model_dump())
@@ -62,7 +62,7 @@ async def register_user(
 @app.post("/auth/token", response_model=Token, tags=["auth"])
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: ClickHouseClient = Depends(get_db_client)
+    db: PostgresClient = Depends(get_postgres_client)
 ):
     user = await authenticate_user(
         db, form_data.username, form_data.password

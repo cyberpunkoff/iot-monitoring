@@ -1,8 +1,15 @@
-from app.database import ClickHouseClient
+from app.database import ClickHouseClient, PostgresClient
 
 
-db_client = ClickHouseClient()
+clickhouse_client = ClickHouseClient()
+postgres_client = PostgresClient()
 
 
-def get_db_client() -> ClickHouseClient:
-    return db_client
+async def get_db_client() -> ClickHouseClient:
+    return clickhouse_client
+
+
+async def get_postgres_client() -> PostgresClient:
+    if not postgres_client.pool:
+        await postgres_client.connect()
+    return postgres_client

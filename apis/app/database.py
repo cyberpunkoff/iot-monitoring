@@ -4,12 +4,130 @@ from typing import List, Optional, Dict, Any, Union
 from clickhouse_driver import Client, defines
 from loguru import logger
 from passlib.context import CryptContext
+import asyncpg
 
 from app.config import config
 from app.models import SensorData, SensorStats, UserInDB, UserRole, Device, User
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+class PostgresClient:
+    def __init__(self):
+        self.pool = None
+        logger.info("PostgreSQL client initialized")
+
+    async def connect(self):
+        if not self.pool:
+            self.pool = await asyncpg.create_pool(
+                host=config.postgres.host,
+                port=config.postgres.port,
+                user=config.postgres.user,
+                password=config.postgres.password,
+                database=config.postgres.database
+            )
+            logger.info(f"Connected to PostgreSQL at {config.postgres.host}:{config.postgres.port}")
+            await self._ensure_tables_exist()
+
+    async def _ensure_tables_exist(self):
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    username VARCHAR(50) PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    full_name VARCHAR(255),
+                    hashed_password VARCHAR(255) NOT NULL,
+                    role VARCHAR(20) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                    last_login TIMESTAMP WITH TIME ZONE,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE
+                )
+            """)
+            logger.info("PostgreSQL tables check/creation completed")
+
+    async def create_user(self, user_data: dict) -> UserInDB:
+        username = user_data["username"]
+        
+        async with self.pool.acquire() as conn:
+            exists = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)",
+                username
+            )
+            if exists:
+                raise ValueError(f"User with username '{username}' already exists")
+            
+            now = datetime.utcnow()
+            hashed_password = pwd_context.hash(user_data["password"].get_secret_value())
+            
+            role = user_data.get("role", UserRole.USER.value)
+            
+            user = {
+                "username": username,
+                "email": user_data["email"],
+                "full_name": user_data.get("full_name", ""),
+                "hashed_password": hashed_password,
+                "role": role,
+                "created_at": now,
+                "last_login": None,
+                "is_active": True
+            }
+            
+            await conn.execute("""
+                INSERT INTO users 
+                (username, email, full_name, hashed_password, role, created_at, last_login, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            """,
+                user["username"],
+                user["email"],
+                user["full_name"],
+                user["hashed_password"],
+                user["role"],
+                user["created_at"],
+                user["last_login"],
+                user["is_active"]
+            )
+            
+            return UserInDB(**user)
+    
+    async def get_user(self, username: str) -> Optional[UserInDB]:
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow("""
+                SELECT 
+                    username, 
+                    email, 
+                    full_name, 
+                    hashed_password, 
+                    role, 
+                    created_at,
+                    last_login,
+                    is_active
+                FROM users
+                WHERE username = $1
+            """, username)
+            
+            if not row:
+                return None
+                
+            return UserInDB(
+                username=row['username'],
+                email=row['email'],
+                full_name=row['full_name'],
+                hashed_password=row['hashed_password'],
+                role=UserRole(row['role']),
+                created_at=row['created_at'],
+                last_login=row['last_login'],
+                is_active=row['is_active']
+            )
+    
+    async def update_last_login(self, username: str) -> None:
+        now = datetime.utcnow()
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE users 
+                SET last_login = $1 
+                WHERE username = $2
+            """, now, username)
 
 
 class ClickHouseClient:
@@ -247,93 +365,6 @@ class ClickHouseClient:
         except Exception as e:
             logger.error(f"Error getting unique sensor IDs: {e}")
             raise
-
-    async def create_user(self, user_data: dict) -> UserInDB:
-        username = user_data["username"]
-        
-        result = self.client.execute(
-            "SELECT count() FROM users WHERE username = %(username)s",
-            {"username": username}
-        )
-        if result[0][0] > 0:
-            raise ValueError(f"User with username '{username}' already exists")
-        
-        now = datetime.utcnow()
-        hashed_password = pwd_context.hash(user_data["password"].get_secret_value())
-        
-        role = user_data.get("role", UserRole.USER.value)
-        
-        user = {
-            "username": username,
-            "email": user_data["email"],
-            "full_name": user_data.get("full_name", ""),
-            "hashed_password": hashed_password,
-            "role": role,
-            "created_at": now,
-            "last_login": None,
-            "is_active": 1
-        }
-        
-        self.client.execute(
-            """
-            INSERT INTO users 
-            (username, email, full_name, hashed_password, role, created_at, last_login, is_active)
-            VALUES
-            """,
-            [(
-                user["username"],
-                user["email"],
-                user["full_name"],
-                user["hashed_password"],
-                user["role"],
-                user["created_at"],
-                user["last_login"],
-                user["is_active"]
-            )]
-        )
-        
-        return UserInDB(**user)
-    
-    async def get_user(self, username: str) -> Optional[UserInDB]:
-        result = self.client.execute(
-            """
-            SELECT 
-                username, 
-                email, 
-                full_name, 
-                hashed_password, 
-                role, 
-                created_at,
-                last_login,
-                is_active
-            FROM users
-            WHERE username = %(username)s
-            LIMIT 1
-            """,
-            {"username": username}
-        )
-        
-        if not result:
-            return None
-            
-        row = result[0]
-        return UserInDB(
-            username=row[0],
-            email=row[1],
-            full_name=row[2],
-            hashed_password=row[3],
-            role=UserRole(row[4]),
-            created_at=row[5],
-            last_login=row[6],
-            is_active=bool(row[7])
-        )
-    
-    async def update_last_login(self, username: str) -> None:
-        now = datetime.utcnow()
-        self.client.execute(
-            "ALTER TABLE users UPDATE last_login = %(now)s WHERE username = %(username)s",
-            {"username": username, "now": now}
-        )
 
     async def create_device(self, device_data: dict) -> Device:
         device_id = device_data["device_id"]

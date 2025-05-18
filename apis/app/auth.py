@@ -8,8 +8,8 @@ from loguru import logger
 from passlib.context import CryptContext
 
 from app.config import config
-from app.database import ClickHouseClient
-from app.dependencies import get_db_client
+from app.database import PostgresClient
+from app.dependencies import get_postgres_client
 from app.models import TokenData, UserInDB, User, UserRole
 
 
@@ -22,41 +22,31 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+async def authenticate_user(db: PostgresClient, username: str, password: str) -> Optional[UserInDB]:
+    user = await db.get_user(username)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    await db.update_last_login(username)
+    return user
+
+
+def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + config.jwt.access_token_expires
-        
+    expire = datetime.utcnow() + config.jwt.access_token_expires
     to_encode.update({"exp": expire})
-    
-    return jwt.encode(
+    encoded_jwt = jwt.encode(
         to_encode, 
         config.jwt.secret_key, 
         algorithm=config.jwt.algorithm
     )
-
-
-async def authenticate_user(
-    db: ClickHouseClient, username: str, password: str
-) -> Union[UserInDB, bool]:
-    user = await db.get_user(username)
-    
-    if not user:
-        return False
-        
-    if not verify_password(password, user.hashed_password):
-        return False
-        
-    await db.update_last_login(username)
-    
-    return user
+    return encoded_jwt
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: ClickHouseClient = Depends(get_db_client)
+    token: str = Depends(oauth2_scheme),
+    db: PostgresClient = Depends(get_postgres_client)
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
